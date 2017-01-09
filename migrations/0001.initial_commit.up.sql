@@ -1,6 +1,7 @@
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS public.users (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
+  code TEXT NOT NULL,
   assignee TEXT NOT NULL
 );
