@@ -1,0 +1,10 @@
+[package]
+name = "rs-secret-santa"
+version = "0.1.0"
+authors = ["Casper Van Gheluwe <caspervg@gmail.com>"]
+
+[dependencies]
+rustful = "0.9"
+rustc-serialize = "0.3.22"
+log = "0.3.6"
+env_logger = "0.3.5"
