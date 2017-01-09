@@ -1,3 +1,4 @@
 target
 /.idea/
 /rs-secret-santa.iml
+config/current.conf
