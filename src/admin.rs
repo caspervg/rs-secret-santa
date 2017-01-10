@@ -32,7 +32,7 @@ struct Assignment {
     assignee: String
 }
 
-#[derive(RustcDecodable, RustcEncodable, Clone)]
+#[derive(RustcDecodable, RustcEncodable, Clone, Hash, PartialEq, Eq, Debug)]
 struct Participant {
     name: String,
     email: String
@@ -70,20 +70,20 @@ pub fn post_santa(database: &Connection, mut context: Context, mut response: Res
         return
     }
 
-    let names: Vec<String> = participants.iter().map(|&ref part| part.name.clone()).collect();
-    let assignments = create_assignments(names);
+    let assignments = create_assignments(&participants);
+    println!("{:?}", assignments);
 
     let stmt = database.prepare("INSERT INTO users (name, email, code, assignee) VALUES ($1, $2, $3, $4)").unwrap();
-    for (name, &assignee) in assignments {
+    for (name, assignee) in assignments {
 
-        stmt.execute(&[name,
-        ]);
+        //stmt.execute(&[name,
+        //]);
     }
 }
 
-fn create_assignments(names: Vec<String>) -> HashMap<String, String> {
+fn create_assignments(names: &Vec<Participant>) -> HashMap<Participant, Participant> {
     let names1 = names.clone();
-    let mut names2: Vec<String> = names1.to_vec();
+    let mut names2: Vec<Participant> = names1.to_vec();
     rand::thread_rng().shuffle(&mut *names2);
     let names3 = names2.clone();
 
@@ -97,7 +97,7 @@ fn create_assignments(names: Vec<String>) -> HashMap<String, String> {
         giver = Some(receiver);
     }
     let ref receiver = names3[0];
-    assignments.insert(giver.unwrap(), String::from((*receiver).clone()));
+    assignments.insert(giver.unwrap(), Participant::from((*receiver).clone()));
 
     assignments
 }
