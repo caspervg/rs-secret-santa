@@ -1,3 +1,4 @@
+
 use std::collections::HashMap;
 use std::hash::Hash;
 use rand::Rng;
@@ -9,16 +10,29 @@ use rustc_serialize::json;
 
 use postgres::Connection;
 use rustful::StatusCode;
+use uuid::Uuid;
 
 macro_rules! or_abort {
-    ($e: expr, $response: expr, $error_message: expr) => (
+    ($e: expr, $response: expr, $status: expr, $error_message: expr) => (
         if let Some(v) = $e {
             v
         } else {
-            $response.set_status(StatusCode::BadRequest);
+            $response.set_status($status);
             $response.headers_mut().set(ContentType(content_type!(Text / Plain; Charset = Utf8)));
             $response.send($error_message);
             return
+        }
+    )
+}
+
+macro_rules! abort_if {
+    ($e: expr, $response: expr, $status: expr, $error_message: expr) => (
+        if $e {
+            $response.set_status($status);
+            $response.headers_mut().set(ContentType(content_type!(Text / Plain; Charset = Utf8)));
+            $response.send($error_message);
+            return
+        } else {
         }
     )
 }
@@ -28,7 +42,7 @@ struct Assignment {
     id: i32,
     name: String,
     email: String,
-    code: String,
+    code: Uuid,
     assignee: String
 }
 
@@ -37,6 +51,9 @@ struct Participant {
     name: String,
     email: String
 }
+
+const ALREADY_EXISTS : &'static str = "A set of assignments already exists.";
+const DELETE_FAILED : &'static str = "Removing the current Secret Santa assignments failed.";
 
 pub fn get_santa(database: &Connection, context: Context, mut response: Response) {
     let mut res = Vec::new();
@@ -55,28 +72,37 @@ pub fn get_santa(database: &Connection, context: Context, mut response: Response
     response.send(json::encode(&res).unwrap());
 }
 
-pub fn delete_santa(database: &Connection, context: Context, response: Response) {
+pub fn delete_santa(database: &Connection, context: Context, mut response: Response) {
+    or_abort!(
+        database.execute("DELETE FROM users", &[]).ok(),
+        response,
+        StatusCode::InternalServerError,
+        DELETE_FAILED
+    );
 
+    response.set_status(StatusCode::NoContent);
 }
 
 pub fn post_santa(database: &Connection, mut context: Context, mut response: Response) {
     let participants: Vec<Participant> = context.body.decode_json_body().unwrap();
 
     let count: i64 = database.query("SELECT COUNT(*) FROM users", &[]).unwrap().get(0).get(0);
-    if count != 0 {
-        response.set_status(StatusCode::Conflict);
-        response.headers_mut().set(ContentType(content_type!(Text / Plain; Charset = Utf8)));
-        response.send("A set of assignments already exists");
-        return
-    }
+    abort_if!(
+        count != 0,
+        response,
+        StatusCode::Conflict,
+        ALREADY_EXISTS
+    );
 
     let assignments = create_assignments(&participants);
-    println!("{:?}", assignments);
 
     let stmt = database.prepare("INSERT INTO users (name, email, code, assignee) VALUES ($1, $2, $3, $4)").unwrap();
     for (participant, assignee) in assignments {
-        stmt.execute(&[&participant.name, &participant.email, &String::from("code"), &assignee.name]);
+        let code = Uuid::new_v4();
+        stmt.execute(&[&participant.name, &participant.email, &code, &assignee.name]);
     }
+
+    response.set_status(StatusCode::Created);
 }
 
 fn create_assignments(names: &Vec<Participant>) -> HashMap<Participant, Participant> {
@@ -95,7 +121,7 @@ fn create_assignments(names: &Vec<Participant>) -> HashMap<Participant, Particip
         giver = Some(receiver);
     }
     let ref receiver = names3[0];
-    assignments.insert(giver.unwrap(), Participant::from((*receiver).clone()));
+    assignments.insert(giver.unwrap(), receiver.clone());
 
     assignments
 }

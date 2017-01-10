@@ -10,6 +10,7 @@ extern crate postgres;
 extern crate log;
 extern crate env_logger;
 extern crate rand;
+extern crate uuid;
 
 use std::path::Path;
 use std::error::Error;
@@ -48,7 +49,7 @@ fn main() {
         host: Host::from_str(config.lookup_str("port").unwrap_or("0.0.0.0:8080")).unwrap(),
         handlers: insert_routes!{
             TreeRouter::new() => {
-                "santa" => {
+                "assignment" => {
                     Get: Api(Some(admin::get_santa)),
                     Post: Api(Some(admin::post_santa)),
                     Delete: Api(Some(admin::delete_santa))
