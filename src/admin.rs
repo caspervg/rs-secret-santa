@@ -74,10 +74,8 @@ pub fn post_santa(database: &Connection, mut context: Context, mut response: Res
     println!("{:?}", assignments);
 
     let stmt = database.prepare("INSERT INTO users (name, email, code, assignee) VALUES ($1, $2, $3, $4)").unwrap();
-    for (name, assignee) in assignments {
-
-        //stmt.execute(&[name,
-        //]);
+    for (participant, assignee) in assignments {
+        stmt.execute(&[&participant.name, &participant.email, &String::from("code"), &assignee.name]);
     }
 }
 
