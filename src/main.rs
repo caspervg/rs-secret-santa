@@ -34,11 +34,11 @@ use rustc_serialize::json;
 use config::reader::from_file;
 use config::types::Config;
 
+#[macro_use]
+mod structs;
+
 mod admin;
-
-fn convert_color(context: Context, response: Response) {
-
-}
+mod assignment;
 
 fn main() {
     let config = from_file(Path::new("config/current.conf")).expect("Could not find current.conf!");
@@ -49,10 +49,13 @@ fn main() {
         host: Host::from_str(config.lookup_str("port").unwrap_or("0.0.0.0:8080")).unwrap(),
         handlers: insert_routes!{
             TreeRouter::new() => {
-                "assignment" => {
+                "admin" => {
                     Get: Api(Some(admin::get_santa)),
                     Post: Api(Some(admin::post_santa)),
                     Delete: Api(Some(admin::delete_santa))
+                },
+                "assignment/:code" => {
+                    Get: Api(Some(assignment::get_assignment))
                 }
             }
         },

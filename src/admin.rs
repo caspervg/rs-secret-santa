@@ -12,45 +12,8 @@ use postgres::Connection;
 use rustful::StatusCode;
 use uuid::Uuid;
 
-macro_rules! or_abort {
-    ($e: expr, $response: expr, $status: expr, $error_message: expr) => (
-        if let Some(v) = $e {
-            v
-        } else {
-            $response.set_status($status);
-            $response.headers_mut().set(ContentType(content_type!(Text / Plain; Charset = Utf8)));
-            $response.send($error_message);
-            return
-        }
-    )
-}
-
-macro_rules! abort_if {
-    ($e: expr, $response: expr, $status: expr, $error_message: expr) => (
-        if $e {
-            $response.set_status($status);
-            $response.headers_mut().set(ContentType(content_type!(Text / Plain; Charset = Utf8)));
-            $response.send($error_message);
-            return
-        } else {
-        }
-    )
-}
-
-#[derive(RustcDecodable, RustcEncodable)]
-struct Assignment {
-    id: i32,
-    name: String,
-    email: String,
-    code: Uuid,
-    assignee: String
-}
-
-#[derive(RustcDecodable, RustcEncodable, Clone, Hash, PartialEq, Eq, Debug)]
-struct Participant {
-    name: String,
-    email: String
-}
+#[macro_use]
+use structs::{Assignment, Participant};
 
 const ALREADY_EXISTS : &'static str = "A set of assignments already exists.";
 const DELETE_FAILED : &'static str = "Removing the current Secret Santa assignments failed.";
