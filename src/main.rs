@@ -6,11 +6,14 @@ extern crate rustc_serialize;
 extern crate unicase;
 extern crate postgres;
 
-#[macro_use]
-extern crate log;
+#[macro_use] extern crate log;
 extern crate env_logger;
 extern crate rand;
 extern crate uuid;
+#[macro_use] extern crate tera;
+#[macro_use] extern crate lazy_static;
+extern crate serde_json;
+extern crate chrono;
 
 use std::path::Path;
 use std::error::Error;
@@ -33,10 +36,10 @@ use rustful::StatusCode;
 use rustc_serialize::json;
 use config::reader::from_file;
 use config::types::Config;
+use tera::{Tera, Context as TeraContext, Result};
+use serde_json::value::{Value, to_value};
 
-#[macro_use]
-mod structs;
-
+#[macro_use] mod structs;
 mod admin;
 mod assignment;
 

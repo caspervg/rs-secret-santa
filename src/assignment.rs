@@ -5,11 +5,21 @@ use rustful::header::ContentType;
 use rustc_serialize::json;
 use rustful::StatusCode;
 use uuid::Uuid;
+use tera::{Tera, Context as TeraContext, Result};
+use chrono::{Local, Datelike};
 
 use structs::{Assignment};
 
-const INVALID_CODE   : &'static str = "You entered am invalid code.";
+const INVALID_CODE   : &'static str = "You entered an invalid code.";
 const INCORRECT_CODE : &'static str = "You entered an incorrect code.";
+
+lazy_static! {
+    pub static ref TEMPLATES: Tera = {
+        let mut tera = compile_templates!("src/templates/**/*");
+        tera.autoescape_on(vec!["html", ".sql"]);
+        tera
+    };
+}
 
 pub fn get_assignment(database: &Connection, context: Context, mut response: Response) {
     let code = context.variables.get("code").unwrap().into_owned();
@@ -39,7 +49,23 @@ pub fn get_assignment(database: &Connection, context: Context, mut response: Res
         code: row.get("code"),
         assignee: row.get("assignee")
     };
+    let dt = Local::now();
 
-    response.headers_mut().set(ContentType::json());
-    response.send(json::encode(&user).unwrap());
+    let mut tera_ctx = TeraContext::new();
+    tera_ctx.add("name", &user.name);
+    tera_ctx.add("assignee", &user.assignee);
+    tera_ctx.add("year", &dt.year());
+
+    response.headers_mut().set(ContentType::html());
+    match TEMPLATES.render("assignment/assignment.html", tera_ctx) {
+        Ok(s) => response.send(s),
+        Err(e) => {
+            response.set_status(StatusCode::InternalServerError);
+            response.send("An error occurred while rendering the assignment template.");
+            println!("Error: {}", e);
+            for e in e.iter().skip(1) {
+                println!("Reason: {}", e);
+            }
+        }
+    };
 }
