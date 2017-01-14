@@ -2,15 +2,13 @@ use postgres::Connection;
 
 use rustful::{Context, Response};
 use rustful::header::ContentType;
-use rustc_serialize::json;
 use rustful::StatusCode;
 use uuid::Uuid;
-use tera::{Tera, Context as TeraContext, Result};
+use tera::{Tera, Context as TeraContext};
 use chrono::{Local, Datelike};
 
 use structs::{Assignment};
 
-const INVALID_CODE   : &'static str = "You entered an invalid code.";
 const INCORRECT_CODE : &'static str = "You entered an incorrect code.";
 
 lazy_static! {
@@ -56,9 +54,11 @@ pub fn get_assignment(database: &Connection, context: Context, mut response: Res
     tera_ctx.add("assignee", &user.assignee);
     tera_ctx.add("year", &dt.year());
 
-    response.headers_mut().set(ContentType::html());
     match TEMPLATES.render("assignment/assignment.html", tera_ctx) {
-        Ok(s) => response.send(s),
+        Ok(s) => {
+            response.headers_mut().set(ContentType::html());
+            response.send(s)
+        },
         Err(e) => {
             response.set_status(StatusCode::InternalServerError);
             response.send("An error occurred while rendering the assignment template.");

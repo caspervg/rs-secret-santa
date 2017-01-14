@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 extern crate config;
 
 #[macro_use]
@@ -20,12 +22,9 @@ use std::error::Error;
 use std::str::FromStr;
 
 use unicase::UniCase;
-
-
-use rustful::{Server, Context, Response, TreeRouter, Handler, Method};
+use rustful::{Server, Context, Response, TreeRouter, Handler};
 use rustful::server::Host;
 use rustful::header::{
-    ContentType,
     AccessControlAllowOrigin,
     AccessControlAllowMethods,
     AccessControlAllowHeaders,
@@ -33,11 +32,8 @@ use rustful::header::{
 use postgres::Connection;
 use postgres::TlsMode;
 use rustful::StatusCode;
-use rustc_serialize::json;
 use config::reader::from_file;
 use config::types::Config;
-use tera::{Tera, Context as TeraContext, Result};
-use serde_json::value::{Value, to_value};
 
 #[macro_use] mod structs;
 mod admin;

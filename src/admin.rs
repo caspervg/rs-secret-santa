@@ -1,18 +1,15 @@
 
 use std::collections::HashMap;
-use std::hash::Hash;
 use rand::Rng;
 use rand;
 
 use rustful::{Context, Response};
 use rustful::header::ContentType;
 use rustc_serialize::json;
-
 use postgres::Connection;
 use rustful::StatusCode;
 use uuid::Uuid;
 
-#[macro_use]
 use structs::{Assignment, Participant};
 
 const ALREADY_EXISTS : &'static str = "A set of assignments already exists.";
@@ -62,7 +59,7 @@ pub fn post_santa(database: &Connection, mut context: Context, mut response: Res
     let stmt = database.prepare("INSERT INTO users (name, email, code, assignee) VALUES ($1, $2, $3, $4)").unwrap();
     for (participant, assignee) in assignments {
         let code = Uuid::new_v4();
-        stmt.execute(&[&participant.name, &participant.email, &code, &assignee.name]);
+        stmt.execute(&[&participant.name, &participant.email, &code, &assignee.name]).unwrap();
     }
 
     response.set_status(StatusCode::Created);
